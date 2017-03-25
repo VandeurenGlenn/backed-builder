@@ -1,0 +1,22 @@
+{
+  "bundles": [
+    {
+      "src": "src/builder.js",
+      "dest": "dist/builder.js",
+      "babel": {
+        "presets": [
+          [
+            "es2015",
+            {
+              "modules": false
+            }
+          ]
+        ],
+        "plugins": [
+          "external-helpers"
+        ]
+      }
+    }
+  ],
+  "format": ["cjs", "es"]
+}

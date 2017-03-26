@@ -1,6 +1,113 @@
 'use strict';
 
-var _marked = [bundler].map(regeneratorRuntime.mark);
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var _classCallCheck = _interopDefault(require('babel-runtime/helpers/classCallCheck'));
+var _createClass = _interopDefault(require('babel-runtime/helpers/createClass'));
+var _regeneratorRuntime = _interopDefault(require('babel-runtime/regenerator'));
+var _asyncGenerator = _interopDefault(require('babel-runtime/helpers/asyncGenerator'));
+
+var bundler = function () {
+  var _ref = _asyncGenerator.wrap(_regeneratorRuntime.mark(function _callee(bundles, fn) {
+    var fns, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, bundle, dest;
+
+    return _regeneratorRuntime.wrap(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            fns = [];
+            _iteratorNormalCompletion = true;
+            _didIteratorError = false;
+            _iteratorError = undefined;
+            _context.prev = 4;
+
+            for (_iterator = bundles[Symbol.iterator](); !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+              bundle = _step.value;
+              dest = bundle.dest;
+
+              bundle = bundle.bundle || bundle;
+              bundle.dest = dest;
+              fns.push(fn(bundle));
+            }
+
+            _context.next = 12;
+            break;
+
+          case 8:
+            _context.prev = 8;
+            _context.t0 = _context['catch'](4);
+            _didIteratorError = true;
+            _iteratorError = _context.t0;
+
+          case 12:
+            _context.prev = 12;
+            _context.prev = 13;
+
+            if (!_iteratorNormalCompletion && _iterator.return) {
+              _iterator.return();
+            }
+
+          case 15:
+            _context.prev = 15;
+
+            if (!_didIteratorError) {
+              _context.next = 18;
+              break;
+            }
+
+            throw _iteratorError;
+
+          case 18:
+            return _context.finish(15);
+
+          case 19:
+            return _context.finish(12);
+
+          case 20:
+            _context.next = 22;
+            return Promise.all(fns).then(function (bundles) {
+              logWorker.kill('SIGINT');
+              if (global.debug) {
+                var _iteratorNormalCompletion2 = true;
+                var _didIteratorError2 = false;
+                var _iteratorError2 = undefined;
+
+                try {
+                  for (var _iterator2 = warnings[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                    var warning = _step2.value;
+
+                    logger.warn(warning);
+                  }
+                } catch (err) {
+                  _didIteratorError2 = true;
+                  _iteratorError2 = err;
+                } finally {
+                  try {
+                    if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                      _iterator2.return();
+                    }
+                  } finally {
+                    if (_didIteratorError2) {
+                      throw _iteratorError2;
+                    }
+                  }
+                }
+              }
+              return bundles;
+            });
+
+          case 22:
+          case 'end':
+            return _context.stop();
+        }
+      }
+    }, _callee, this, [[4, 8, 12, 20], [13,, 15, 19]]);
+  }));
+
+  return function bundler(_x, _x2) {
+    return _ref.apply(this, arguments);
+  };
+}();
 
 var _require = require('rollup');
 var rollup = _require.rollup;
@@ -17,105 +124,9 @@ var warnings = [];
 
 var logWorker = fork(path.join(__dirname, 'workers/log-worker.js'));
 
-function bundler(bundles, fn) {
-  var fns, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, bundle, dest;
-
-  return regeneratorRuntime.wrap(function bundler$(_context) {
-    while (1) {
-      switch (_context.prev = _context.next) {
-        case 0:
-          fns = [];
-          _iteratorNormalCompletion = true;
-          _didIteratorError = false;
-          _iteratorError = undefined;
-          _context.prev = 4;
-
-          for (_iterator = bundles[Symbol.iterator](); !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-            bundle = _step.value;
-            dest = bundle.dest;
-
-            bundle = bundle.bundle || bundle;
-            bundle.dest = dest;
-            fns.push(fn(bundle));
-          }
-
-          _context.next = 12;
-          break;
-
-        case 8:
-          _context.prev = 8;
-          _context.t0 = _context['catch'](4);
-          _didIteratorError = true;
-          _iteratorError = _context.t0;
-
-        case 12:
-          _context.prev = 12;
-          _context.prev = 13;
-
-          if (!_iteratorNormalCompletion && _iterator.return) {
-            _iterator.return();
-          }
-
-        case 15:
-          _context.prev = 15;
-
-          if (!_didIteratorError) {
-            _context.next = 18;
-            break;
-          }
-
-          throw _iteratorError;
-
-        case 18:
-          return _context.finish(15);
-
-        case 19:
-          return _context.finish(12);
-
-        case 20:
-          _context.next = 22;
-          return Promise.all(fns).then(function (bundles) {
-            logWorker.kill('SIGINT');
-            if (global.debug) {
-              var _iteratorNormalCompletion2 = true;
-              var _didIteratorError2 = false;
-              var _iteratorError2 = undefined;
-
-              try {
-                for (var _iterator2 = warnings[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                  var warning = _step2.value;
-
-                  logger.warn(warning);
-                }
-              } catch (err) {
-                _didIteratorError2 = true;
-                _iteratorError2 = err;
-              } finally {
-                try {
-                  if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                    _iterator2.return();
-                  }
-                } finally {
-                  if (_didIteratorError2) {
-                    throw _iteratorError2;
-                  }
-                }
-              }
-            }
-            return bundles;
-          });
-
-        case 22:
-        case 'end':
-          return _context.stop();
-      }
-    }
-  }, _marked[0], this, [[4, 8, 12, 20], [13,, 15, 19]]);
-}
-
 var Builder = function () {
   function Builder(config) {
-    babelHelpers.classCallCheck(this, Builder);
+    _classCallCheck(this, Builder);
 
     logWorker.send(logger._chalk('building', 'cyan'));
     logWorker.send('start');
@@ -127,7 +138,7 @@ var Builder = function () {
    */
 
 
-  babelHelpers.createClass(Builder, [{
+  _createClass(Builder, [{
     key: 'toJsProp',
     value: function toJsProp(string) {
       var parts = string.split('-');
@@ -339,6 +350,7 @@ var Builder = function () {
       });
     }
   }]);
+
   return Builder;
 }();
 

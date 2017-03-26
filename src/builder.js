@@ -9,7 +9,7 @@ let warnings = [];
 
 const logWorker = fork(path.join(__dirname, 'workers/log-worker.js'));
 
-function * bundler(bundles, fn) {
+async function * bundler(bundles, fn) {
   let fns = [];
   for (let bundle of bundles) {
     let dest = bundle.dest;

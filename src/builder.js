@@ -28,8 +28,8 @@
   export default class Builder {
 
     constructor(config) {
-      logWorker.send(logger._chalk('building', 'cyan'));
       logWorker.send('start');
+      logWorker.send(logger._chalk('building', 'cyan'));
       this.build(config);
     }
 

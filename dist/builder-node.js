@@ -1,29 +1,5 @@
 'use strict';
 
-var classCallCheck = function (instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
-};
-
-var createClass = function () {
-  function defineProperties(target, props) {
-    for (var i = 0; i < props.length; i++) {
-      var descriptor = props[i];
-      descriptor.enumerable = descriptor.enumerable || false;
-      descriptor.configurable = true;
-      if ("value" in descriptor) descriptor.writable = true;
-      Object.defineProperty(target, descriptor.key, descriptor);
-    }
-  }
-
-  return function (Constructor, protoProps, staticProps) {
-    if (protoProps) defineProperties(Constructor.prototype, protoProps);
-    if (staticProps) defineProperties(Constructor, staticProps);
-    return Constructor;
-  };
-}();
-
 var _marked = [bundler].map(regeneratorRuntime.mark);
 
 var _require = require('rollup');
@@ -42,138 +18,107 @@ var warnings = [];
 var logWorker = fork(path.join(__dirname, 'workers/log-worker.js'));
 
 function bundler(bundles, fn) {
-  var _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, bundle, dest, format, _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2, warning;
+  var fns, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, bundle, dest;
 
   return regeneratorRuntime.wrap(function bundler$(_context) {
     while (1) {
       switch (_context.prev = _context.next) {
         case 0:
+          fns = [];
           _iteratorNormalCompletion = true;
           _didIteratorError = false;
           _iteratorError = undefined;
-          _context.prev = 3;
-          _iterator = bundles[Symbol.iterator]();
+          _context.prev = 4;
 
-        case 5:
-          if (_iteratorNormalCompletion = (_step = _iterator.next()).done) {
-            _context.next = 17;
-            break;
+          for (_iterator = bundles[Symbol.iterator](); !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            bundle = _step.value;
+            dest = bundle.dest;
+
+            bundle = bundle.bundle || bundle;
+            bundle.dest = dest;
+            fns.push(fn(bundle));
           }
 
-          bundle = _step.value;
-          dest = bundle.dest;
-          format = bundle.format;
-
-          bundle = bundle.bundle || bundle;
-          bundle.dest = dest;
-          bundle.format = format;
-          _context.next = 14;
-          return fn(bundle);
-
-        case 14:
-          _iteratorNormalCompletion = true;
-          _context.next = 5;
+          _context.next = 12;
           break;
 
-        case 17:
-          _context.next = 23;
-          break;
-
-        case 19:
-          _context.prev = 19;
-          _context.t0 = _context['catch'](3);
+        case 8:
+          _context.prev = 8;
+          _context.t0 = _context['catch'](4);
           _didIteratorError = true;
           _iteratorError = _context.t0;
 
-        case 23:
-          _context.prev = 23;
-          _context.prev = 24;
+        case 12:
+          _context.prev = 12;
+          _context.prev = 13;
 
           if (!_iteratorNormalCompletion && _iterator.return) {
             _iterator.return();
           }
 
-        case 26:
-          _context.prev = 26;
+        case 15:
+          _context.prev = 15;
 
           if (!_didIteratorError) {
-            _context.next = 29;
+            _context.next = 18;
             break;
           }
 
           throw _iteratorError;
 
-        case 29:
-          return _context.finish(26);
+        case 18:
+          return _context.finish(15);
 
-        case 30:
-          return _context.finish(23);
+        case 19:
+          return _context.finish(12);
 
-        case 31:
-          logWorker.kill('SIGINT');
+        case 20:
+          _context.next = 22;
+          return Promise.all(fns).then(function (bundles) {
+            logWorker.kill('SIGINT');
+            if (global.debug) {
+              var _iteratorNormalCompletion2 = true;
+              var _didIteratorError2 = false;
+              var _iteratorError2 = undefined;
 
-          if (!global.debug) {
-            _context.next = 52;
-            break;
-          }
+              try {
+                for (var _iterator2 = warnings[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                  var warning = _step2.value;
 
-          _iteratorNormalCompletion2 = true;
-          _didIteratorError2 = false;
-          _iteratorError2 = undefined;
-          _context.prev = 36;
+                  logger.warn(warning);
+                }
+              } catch (err) {
+                _didIteratorError2 = true;
+                _iteratorError2 = err;
+              } finally {
+                try {
+                  if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                    _iterator2.return();
+                  }
+                } finally {
+                  if (_didIteratorError2) {
+                    throw _iteratorError2;
+                  }
+                }
+              }
+            }
+            return bundles;
+          });
 
-          for (_iterator2 = warnings[Symbol.iterator](); !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-            warning = _step2.value;
-
-            logger.warn(warning);
-          }
-          _context.next = 44;
-          break;
-
-        case 40:
-          _context.prev = 40;
-          _context.t1 = _context['catch'](36);
-          _didIteratorError2 = true;
-          _iteratorError2 = _context.t1;
-
-        case 44:
-          _context.prev = 44;
-          _context.prev = 45;
-
-          if (!_iteratorNormalCompletion2 && _iterator2.return) {
-            _iterator2.return();
-          }
-
-        case 47:
-          _context.prev = 47;
-
-          if (!_didIteratorError2) {
-            _context.next = 50;
-            break;
-          }
-
-          throw _iteratorError2;
-
-        case 50:
-          return _context.finish(47);
-
-        case 51:
-          return _context.finish(44);
-
-        case 52:
+        case 22:
         case 'end':
           return _context.stop();
       }
     }
-  }, _marked[0], this, [[3, 19, 23, 31], [24,, 26, 30], [36, 40, 44, 52], [45,, 47, 51]]);
+  }, _marked[0], this, [[4, 8, 12, 20], [13,, 15, 19]]);
 }
 
 var Builder = function () {
   function Builder(config) {
-    classCallCheck(this, Builder);
+    babelHelpers.classCallCheck(this, Builder);
 
-    logWorker.send('start');
     logWorker.send(logger._chalk('building', 'cyan'));
+    logWorker.send('start');
     this.build(config);
   }
 
@@ -182,7 +127,7 @@ var Builder = function () {
    */
 
 
-  createClass(Builder, [{
+  babelHelpers.createClass(Builder, [{
     key: 'toJsProp',
     value: function toJsProp(string) {
       var parts = string.split('-');
@@ -232,11 +177,12 @@ var Builder = function () {
     }
   }, {
     key: 'handleFormats',
-    value: function handleFormats(bundle, format) {
+    value: function handleFormats(bundle) {
       var _this2 = this;
 
       return new Promise(function (resolve, reject) {
         try {
+          var format = bundle.format;
           var dest = bundle.dest;
           if (format === 'iife' && !bundle.moduleName) {
             bundle.moduleName = _this2.toJsProp(bundle.name);
@@ -261,26 +207,9 @@ var Builder = function () {
       });
     }
   }, {
-    key: 'handleFormat',
-    value: function handleFormat(bundle) {
-      var _this3 = this;
-
-      var format = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : undefined;
-
-      return new Promise(function (resolve) {
-        if (format) {
-          bundle.format = format;
-        }
-        if (bundle.format === 'iife' && !bundle.moduleName) {
-          bundle.moduleName = _this3.toJsProp(bundle.name);
-        }
-        resolve(bundle);
-      });
-    }
-  }, {
     key: 'promiseBundles',
     value: function promiseBundles(config) {
-      var _this4 = this;
+      var _this3 = this;
 
       return new Promise(function (resolve, reject) {
         var formats = [];
@@ -306,7 +235,8 @@ var Builder = function () {
                   for (var _iterator5 = config.format[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
                     var format = _step5.value;
 
-                    formats.push(_this4.handleFormats(bundle, format));
+                    bundle.format = format;
+                    formats.push(_this3.handleFormats(bundle));
                   }
                 } catch (err) {
                   _didIteratorError5 = true;
@@ -323,9 +253,9 @@ var Builder = function () {
                   }
                 }
               } else if (bundle.format) {
-                formats.push(_this4.handleFormat(bundle));
+                formats.push(_this3.handleFormats(bundle));
               } else if (!bundle.format) {
-                formats.push(_this4.handleFormat(bundle, config.format));
+                formats.push(_this3.handleFormats(bundle));
               }
             }
           } catch (err) {
@@ -368,42 +298,44 @@ var Builder = function () {
     value: function bundle() {
       var config = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : { src: null, dest: 'bundle.js', format: 'iife', name: null, plugins: [], moduleName: null, sourceMap: true };
 
-      var plugins = config.plugins || [];
-      if (config.babel) {
-        var babel = require('rollup-plugin-babel');
-        plugins.push(babel(config.babel));
-      }
-      rollup({
-        entry: process.cwd() + '/' + config.src,
-        plugins: plugins,
-        cache: cache,
-        // Use the previous bundle as starting point.
-        onwarn: function onwarn(warning) {
-          warnings.push(warning);
+      return new Promise(function (resolve, reject) {
+        var plugins = config.plugins || [];
+        if (config.babel) {
+          var babel = require('rollup-plugin-babel');
+          plugins.push(babel(config.babel));
         }
-      }).then(function (bundle) {
-        cache = bundle;
-        bundle.write({
-          // output format - 'amd', 'cjs', 'es', 'iife', 'umd'
-          format: config.format,
-          moduleName: config.moduleName,
-          sourceMap: config.sourceMap,
-          dest: process.cwd() + '/' + config.dest
+        rollup({
+          entry: process.cwd() + '/' + config.src,
+          plugins: plugins,
+          cache: cache,
+          // Use the previous bundle as starting point.
+          onwarn: function onwarn(warning) {
+            warnings.push(warning);
+          }
+        }).then(function (bundle) {
+          cache = bundle;
+          bundle.write({
+            // output format - 'amd', 'cjs', 'es', 'iife', 'umd'
+            format: config.format,
+            moduleName: config.moduleName,
+            sourceMap: config.sourceMap,
+            dest: process.cwd() + '/' + config.dest
+          });
+          logWorker.send(logger._chalk(config.name + '::build finished', 'cyan'));
+          setTimeout(function () {
+            resolve();
+          }, 100);
+        }).catch(function (err) {
+          var code = err.code;
+          logWorker.send('pauze');
+          logger.error(err);
+          if (code === 'PLUGIN_ERROR' || code === 'UNRESOLVED_ENTRY') {
+            logWorker.kill('SIGINT');
+          } else {
+            logger.warn('trying to resume the build ...');
+            logWorker.send('resume');
+          }
         });
-        logWorker.send(logger._chalk(global.config.name + '::build finished', 'cyan'));
-        setTimeout(function () {
-          iterator.next();
-        }, 100);
-      }).catch(function (err) {
-        var code = err.code;
-        logWorker.send('pauze');
-        logger.error(err);
-        if (code === 'PLUGIN_ERROR' || code === 'UNRESOLVED_ENTRY') {
-          logWorker.kill('SIGINT');
-        } else {
-          logger.warn('trying to resume the build ...');
-          logWorker.send('resume');
-        }
       });
     }
   }]);

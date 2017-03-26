@@ -1,6 +1,6 @@
 {
   "name": "backed-builder",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "dist/builder-node.js",
   "module": "dist/builder-es.js",
   "license": "MIT",

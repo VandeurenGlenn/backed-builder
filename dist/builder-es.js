@@ -170,8 +170,8 @@ var Builder = function () {
   function Builder(config) {
     classCallCheck(this, Builder);
 
-    logWorker.send(logger._chalk('building', 'cyan'));
     logWorker.send('start');
+    logWorker.send(logger._chalk('building', 'cyan'));
     this.build(config);
   }
 

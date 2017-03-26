@@ -18,5 +18,11 @@
       }
     }
   ],
-  "format": ["cjs", "es"]
+  "format": ["cjs", "es"],
+  "sources": [
+    {
+      "src": ["src/workers/*.js"],
+      "dest": "dist"
+    }
+  ]
 }

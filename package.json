@@ -5,7 +5,11 @@
   "module": "dist/builder-es.js",
   "license": "MIT",
   "dependencies": {
-    "backed-logger": "^1.0.1"
+    "backed-logger": "^1.0.1",
+    "chalk": "^1.1.3",
+    "elegant-spinner": "^1.0.1",
+    "log-update": "^1.0.2",
+    "rollup": "^0.41.6"
   },
   "devDependencies": {
     "babel-plugin-external-helpers": "^6.22.0",

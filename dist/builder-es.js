@@ -112,7 +112,7 @@ var asyncGenerator = function () {
 }();
 
 let bundler = (() => {
-  var _ref = asyncGenerator.wrap(function* (bundles, fn) {
+  var _ref = asyncGenerator.wrap(function* (bundles, fn, cb) {
     let fns = [];
     for (let bundle of bundles) {
       let dest = bundle.dest;
@@ -121,18 +121,18 @@ let bundler = (() => {
       fns.push(fn(bundle));
     }
 
-    yield Promise.all(fns).then(function (bundles) {
+    yield asyncGenerator.await(Promise.all(fns).then(function (bundles) {
       logWorker.kill('SIGINT');
       if (global.debug) {
         for (let warning of warnings) {
           logger.warn(warning);
         }
       }
-      return bundles;
-    });
+      cb(bundles);
+    }));
   });
 
-  return function bundler(_x, _x2) {
+  return function bundler(_x, _x2, _x3) {
     return _ref.apply(this, arguments);
   };
 })();
@@ -167,13 +167,19 @@ class Builder {
   }
 
   build(config) {
-    logWorker.send('start');
-    logWorker.send(logger._chalk('building', 'cyan'));
-    this.promiseBundles(config).then(bundles => {
-      iterator = bundler(bundles, this.bundle);
-      iterator.next();
-    }).catch(error => {
-      logger.warn(error);
+    return new Promise((resolve, reject) => {
+      logWorker.send('start');
+      logWorker.send(logger._chalk('building', 'cyan'));
+      this.promiseBundles(config).then(bundles => {
+        iterator = bundler(bundles, this.bundle, bundles => {
+
+          resolve(bundles);
+        });
+        iterator.next();
+      }).catch(error => {
+        logger.warn(error);
+        reject(error);
+      });
     });
   }
 
@@ -257,10 +263,8 @@ class Builder {
       rollup({
         entry: `${process.cwd()}/${config.src}`,
         plugins: plugins,
-        cache: cache, // Use the previous bundle as starting point.
-        // acorn: {
-        //   allowReserved: true
-        // },
+        cache: cache,
+        // Use the previous bundle as starting point.
         onwarn: warning => {
           warnings.push(warning);
         }
@@ -273,9 +277,12 @@ class Builder {
           sourceMap: config.sourceMap,
           dest: `${process.cwd()}/${config.dest}`
         });
-        logWorker.send(logger._chalk(`${config.name}::build finished`, 'cyan'));
         setTimeout(() => {
-          resolve();
+          logWorker.send(logger._chalk(`${config.name}::build finished`, 'cyan'));
+          logWorker.send('done');
+          logWorker.on('message', () => {
+            resolve();
+          });
         }, 100);
       }).catch(err => {
         const code = err.code;

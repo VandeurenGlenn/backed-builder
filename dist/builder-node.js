@@ -8,7 +8,7 @@ var _regeneratorRuntime = _interopDefault(require('babel-runtime/regenerator'));
 var _asyncGenerator = _interopDefault(require('babel-runtime/helpers/asyncGenerator'));
 
 var bundler = function () {
-  var _ref = _asyncGenerator.wrap(_regeneratorRuntime.mark(function _callee(bundles, fn) {
+  var _ref = _asyncGenerator.wrap(_regeneratorRuntime.mark(function _callee(bundles, fn, cb) {
     var fns, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, bundle, dest;
 
     return _regeneratorRuntime.wrap(function _callee$(_context) {
@@ -65,7 +65,7 @@ var bundler = function () {
 
           case 20:
             _context.next = 22;
-            return Promise.all(fns).then(function (bundles) {
+            return _asyncGenerator.await(Promise.all(fns).then(function (bundles) {
               logWorker.kill('SIGINT');
               if (global.debug) {
                 var _iteratorNormalCompletion2 = true;
@@ -93,8 +93,8 @@ var bundler = function () {
                   }
                 }
               }
-              return bundles;
-            });
+              cb(bundles);
+            }));
 
           case 22:
           case 'end':
@@ -104,7 +104,7 @@ var bundler = function () {
     }, _callee, this, [[4, 8, 12, 20], [13,, 15, 19]]);
   }));
 
-  return function bundler(_x, _x2) {
+  return function bundler(_x, _x2, _x3) {
     return _ref.apply(this, arguments);
   };
 }();
@@ -175,13 +175,19 @@ var Builder = function () {
     value: function build(config) {
       var _this = this;
 
-      logWorker.send('start');
-      logWorker.send(logger._chalk('building', 'cyan'));
-      this.promiseBundles(config).then(function (bundles) {
-        iterator = bundler(bundles, _this.bundle);
-        iterator.next();
-      }).catch(function (error) {
-        logger.warn(error);
+      return new Promise(function (resolve, reject) {
+        logWorker.send('start');
+        logWorker.send(logger._chalk('building', 'cyan'));
+        _this.promiseBundles(config).then(function (bundles) {
+          iterator = bundler(bundles, _this.bundle, function (bundles) {
+
+            resolve(bundles);
+          });
+          iterator.next();
+        }).catch(function (error) {
+          logger.warn(error);
+          reject(error);
+        });
       });
     }
   }, {
@@ -340,10 +346,8 @@ var Builder = function () {
         rollup({
           entry: process.cwd() + '/' + config.src,
           plugins: plugins,
-          cache: cache, // Use the previous bundle as starting point.
-          // acorn: {
-          //   allowReserved: true
-          // },
+          cache: cache,
+          // Use the previous bundle as starting point.
           onwarn: function onwarn(warning) {
             warnings.push(warning);
           }
@@ -356,9 +360,12 @@ var Builder = function () {
             sourceMap: config.sourceMap,
             dest: process.cwd() + '/' + config.dest
           });
-          logWorker.send(logger._chalk(config.name + '::build finished', 'cyan'));
           setTimeout(function () {
-            resolve();
+            logWorker.send(logger._chalk(config.name + '::build finished', 'cyan'));
+            logWorker.send('done');
+            logWorker.on('message', function () {
+              resolve();
+            });
           }, 100);
         }).catch(function (err) {
           var code = err.code;

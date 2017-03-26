@@ -28,13 +28,7 @@ async function * bundler(bundles, fn) {
     return bundles;
   });
 }
-export default class Builder {
-
-  constructor(config) {
-    logWorker.send(logger._chalk('building', 'cyan'));
-    logWorker.send('start');
-    this.build(config);
-  }
+class Builder {
 
   /**
    * convert hyphen to a javascript property srting
@@ -54,6 +48,8 @@ export default class Builder {
   }
 
   build(config) {
+    logWorker.send('start');
+    logWorker.send(logger._chalk('building', 'cyan'));
     this.promiseBundles(config).then(bundles => {
       iterator = bundler(bundles, this.bundle);
       iterator.next();
@@ -104,9 +100,12 @@ export default class Builder {
               bundle.format = format;
               formats.push(this.handleFormats(bundle));
             }
-          } else if (bundle.format) {
-            formats.push(this.handleFormats(bundle));
-          } else if (!bundle.format) {
+          } else if (bundle.format && typeof bundle.format !== 'string') {
+            for (let format of bundle.format) {
+              bundle.format = format;
+              formats.push(this.handleFormats(bundle));
+            }
+          } else {
             formats.push(this.handleFormats(bundle));
           }
         }
@@ -140,14 +139,17 @@ export default class Builder {
         entry: `${process.cwd()}/${config.src}`,
         plugins: plugins,
         cache: cache,
-        // Use the previous bundle as starting point.
+        acorn: {
+          allowReserved: true
+        },
+      // Use the previous bundle as starting point.
         onwarn: warning => {
           warnings.push(warning);
         }
       }).then(bundle => {
         cache = bundle;
         bundle.write({
-          // output format - 'amd', 'cjs', 'es', 'iife', 'umd'
+        // output format - 'amd', 'cjs', 'es', 'iife', 'umd'
           format: config.format,
           moduleName: config.moduleName,
           sourceMap: config.sourceMap,
@@ -167,7 +169,9 @@ export default class Builder {
           logger.warn('trying to resume the build ...');
           logWorker.send('resume');
         }
+        reject(err);
       });
     });
   }
 }
+export default new Builder();

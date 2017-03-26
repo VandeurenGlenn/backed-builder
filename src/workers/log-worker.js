@@ -4,7 +4,7 @@ const logUpdate = require('log-update');
 const chalk = require('chalk');
 let frame = elegantSpinner();
 let text = 'Building';
-
+let done = false;
 let running = false;
 let startTime;
 
@@ -20,6 +20,9 @@ let interval = () => {
   setInterval(() => {
     if (running) {
       logUpdate(`[${time()}] ${text} ${frame()}`);
+      if (done) {
+        process.send('done');
+      }
     }
   }, 50);
 };
@@ -39,6 +42,8 @@ process.on('message', message => {
     let period = now() - startTime;
     period /= 1000;
     text = `${message} after: ${chalk.magenta(period + ' sec')}`;
+  } else if (message === 'done') {
+    done = true;
   } else {
     text = message;
   }

@@ -149,12 +149,6 @@ const logWorker = fork(path.join(__dirname, 'workers/log-worker.js'));
 
 class Builder {
 
-  constructor(config) {
-    logWorker.send(logger._chalk('building', 'cyan'));
-    logWorker.send('start');
-    this.build(config);
-  }
-
   /**
    * convert hyphen to a javascript property srting
    */
@@ -173,6 +167,8 @@ class Builder {
   }
 
   build(config) {
+    logWorker.send('start');
+    logWorker.send(logger._chalk('building', 'cyan'));
     this.promiseBundles(config).then(bundles => {
       iterator = bundler(bundles, this.bundle);
       iterator.next();
@@ -223,9 +219,12 @@ class Builder {
               bundle.format = format;
               formats.push(this.handleFormats(bundle));
             }
-          } else if (bundle.format) {
-            formats.push(this.handleFormats(bundle));
-          } else if (!bundle.format) {
+          } else if (bundle.format && typeof bundle.format !== 'string') {
+            for (let format of bundle.format) {
+              bundle.format = format;
+              formats.push(this.handleFormats(bundle));
+            }
+          } else {
             formats.push(this.handleFormats(bundle));
           }
         }
@@ -258,8 +257,10 @@ class Builder {
       rollup({
         entry: `${process.cwd()}/${config.src}`,
         plugins: plugins,
-        cache: cache,
-        // Use the previous bundle as starting point.
+        cache: cache, // Use the previous bundle as starting point.
+        // acorn: {
+        //   allowReserved: true
+        // },
         onwarn: warning => {
           warnings.push(warning);
         }
@@ -286,10 +287,12 @@ class Builder {
           logger.warn('trying to resume the build ...');
           logWorker.send('resume');
         }
+        reject(err);
       });
     });
   }
 }
+var builder = new Builder();
 
-export default Builder;
+export default builder;
 //# sourceMappingURL=builder-es.js.map

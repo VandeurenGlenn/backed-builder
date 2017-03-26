@@ -138,11 +138,10 @@ class Builder {
       rollup({
         entry: `${process.cwd()}/${config.src}`,
         plugins: plugins,
-        cache: cache,
-        acorn: {
-          allowReserved: true
-        },
-      // Use the previous bundle as starting point.
+        cache: cache, // Use the previous bundle as starting point.
+        // acorn: {
+        //   allowReserved: true
+        // },
         onwarn: warning => {
           warnings.push(warning);
         }

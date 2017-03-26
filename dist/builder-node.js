@@ -125,21 +125,17 @@ var warnings = [];
 var logWorker = fork(path.join(__dirname, 'workers/log-worker.js'));
 
 var Builder = function () {
-  function Builder(config) {
+  function Builder() {
     _classCallCheck(this, Builder);
-
-    logWorker.send(logger._chalk('building', 'cyan'));
-    logWorker.send('start');
-    this.build(config);
   }
-
-  /**
-   * convert hyphen to a javascript property srting
-   */
-
 
   _createClass(Builder, [{
     key: 'toJsProp',
+
+
+    /**
+     * convert hyphen to a javascript property srting
+     */
     value: function toJsProp(string) {
       var parts = string.split('-');
       if (parts.length > 1) {
@@ -179,6 +175,8 @@ var Builder = function () {
     value: function build(config) {
       var _this = this;
 
+      logWorker.send('start');
+      logWorker.send(logger._chalk('building', 'cyan'));
       this.promiseBundles(config).then(function (bundles) {
         iterator = bundler(bundles, _this.bundle);
         iterator.next();
@@ -263,9 +261,33 @@ var Builder = function () {
                     }
                   }
                 }
-              } else if (bundle.format) {
-                formats.push(_this3.handleFormats(bundle));
-              } else if (!bundle.format) {
+              } else if (bundle.format && typeof bundle.format !== 'string') {
+                var _iteratorNormalCompletion6 = true;
+                var _didIteratorError6 = false;
+                var _iteratorError6 = undefined;
+
+                try {
+                  for (var _iterator6 = bundle.format[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                    var _format = _step6.value;
+
+                    bundle.format = _format;
+                    formats.push(_this3.handleFormats(bundle));
+                  }
+                } catch (err) {
+                  _didIteratorError6 = true;
+                  _iteratorError6 = err;
+                } finally {
+                  try {
+                    if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                      _iterator6.return();
+                    }
+                  } finally {
+                    if (_didIteratorError6) {
+                      throw _iteratorError6;
+                    }
+                  }
+                }
+              } else {
                 formats.push(_this3.handleFormats(bundle));
               }
             }
@@ -318,8 +340,10 @@ var Builder = function () {
         rollup({
           entry: process.cwd() + '/' + config.src,
           plugins: plugins,
-          cache: cache,
-          // Use the previous bundle as starting point.
+          cache: cache, // Use the previous bundle as starting point.
+          // acorn: {
+          //   allowReserved: true
+          // },
           onwarn: function onwarn(warning) {
             warnings.push(warning);
           }
@@ -346,6 +370,7 @@ var Builder = function () {
             logger.warn('trying to resume the build ...');
             logWorker.send('resume');
           }
+          reject(err);
         });
       });
     }
@@ -354,5 +379,7 @@ var Builder = function () {
   return Builder;
 }();
 
-module.exports = Builder;
+var builder = new Builder();
+
+module.exports = builder;
 //# sourceMappingURL=builder-node.js.map

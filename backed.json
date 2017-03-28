@@ -4,42 +4,45 @@
       "src": "src/builder.js",
       "dest": "dist/builder.js",
       "format": "es",
-      "babel": {
-        "presets": [
-          "es2016"
-        ],
-        "plugins": [
-          "external-helpers",
-          "transform-async-generator-functions"
-        ]
+      "plugins": {
+        "babel": {
+          "presets": [
+            "es2016"
+          ],
+          "plugins": [
+            "external-helpers",
+            "transform-async-generator-functions"
+          ]
+        }
       }
     }, {
       "src": "src/builder.js",
       "dest": "dist/builder.js",
       "format": "cjs",
-      "babel": {
-        "presets": [
-          ["es2015",
-          {
-            "modules": false
-          }]
-        ],
-        "plugins": [
-          "transform-async-generator-functions",
-          "external-helpers",
-          ["transform-runtime", {
-            "polyfill": false,
-            "regenerator": true
-          }]
-        ]
+      "plugins": {
+        "babel": {
+          "presets": [
+            ["es2015",
+            {
+              "modules": false
+            }]
+          ],
+          "plugins": [
+            "transform-async-generator-functions",
+            "external-helpers",
+            ["transform-runtime", {
+              "polyfill": false,
+              "regenerator": true
+            }]
+          ]
+        }
       }
     }
   ],
   "sources": [{
     "src": ["node_modules/babel-runtime/helpers/{classCallCheck,createClass,regenerator,asyncGenerator}*.js", "node_modules/babel-runtime/regenerator/*.js"],
     "dest": "dist/node_modules"
-  },
-    {
+  }, {
       "src": ["src/workers/*.js"],
       "dest": "dist"
     }

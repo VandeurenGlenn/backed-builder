@@ -19,6 +19,8 @@ async function * bundler(bundles, fn, cb) {
   }
 
   await Promise.all(fns).then(bundles => {
+    // TODO: Decide to implement or not, a method for transforming content
+    // TODO: When not transforming, return bundles.code or bundles...
     logWorker.kill('SIGINT');
     if (global.debug) {
       for (let warning of warnings) {
@@ -26,7 +28,7 @@ async function * bundler(bundles, fn, cb) {
       }
     }
     cb(bundles)
-  });
+  }).catch(error => {logger.warn(error);});
 }
 class Builder {
 
@@ -155,9 +157,9 @@ class Builder {
           } else {
             formats.push(this.handleFormats(bundle));
           }
-          Promise.all(formats).then(bundles => {
-            resolve(bundles);
-          });
+        });
+        Promise.all(formats).then(bundles => {
+          resolve(bundles);
         });
       } catch (err) {
         reject(err);
@@ -177,11 +179,25 @@ class Builder {
  */
   bundle(config = {src: null, dest: 'bundle.js', format: 'iife', name: null, plugins: [], moduleName: null, sourceMap: true}) {
     return new Promise((resolve, reject) => {
-      let plugins = config.plugins || [];
-      if (config.babel) {
-        const babel = require('rollup-plugin-babel');
-        plugins.push(babel(config.babel));
+      let plugins = [];
+      let requiredPlugins = {};
+      for (let plugin of Object.keys(config.plugins)) {
+        let required;
+        try {
+          required = require(`rollup-plugin-${plugin}`);
+        } catch (error) {
+          try {
+            required = require(path.join(process.cwd(), `/node_modules/rollup-plugin-${plugin}`));
+          } catch (error) {
+            reject(error);
+          }
+        }
+        const conf = config.plugins[plugin];
+        requiredPlugins[plugin] = required;
+
+        plugins.push(requiredPlugins[plugin](conf));
       }
+
       rollup({
         entry: `${process.cwd()}/${config.src}`,
         plugins: plugins,
@@ -203,7 +219,7 @@ class Builder {
           logWorker.send(logger._chalk(`${config.name}::build finished`, 'cyan'));
           logWorker.send('done');
           logWorker.on('message', () => {
-            resolve();
+            resolve(bundle);
           })
         }, 100);
       }).catch(err => {

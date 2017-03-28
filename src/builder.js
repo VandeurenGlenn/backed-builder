@@ -53,7 +53,6 @@ class Builder {
     logWorker.send(logger._chalk('building', 'cyan'));
     this.promiseBundles(config).then(bundles => {
       iterator = bundler(bundles, this.bundle, bundles => {
-
         resolve(bundles)
       });
       iterator.next();
@@ -69,10 +68,15 @@ class Builder {
       try {
         const format = bundle.format;
         let dest = bundle.dest;
-        if (format === 'iife' && !bundle.moduleName) {
-          bundle.moduleName = this.toJsProp(bundle.name);
-        } else {
+        let formats = [];
+        // TODO: Check for two iife configs, throw error!
+        if (bundle.shouldRename) {
           switch (format) {
+            case 'iife':
+              if (!bundle.moduleName) {
+                bundle.moduleName = this.toJsProp(bundle.name);
+              }
+              break;
             case 'cjs':
               dest = bundle.dest.replace('.js', '-node.js');
               break;
@@ -82,7 +86,7 @@ class Builder {
               break;
             default:
               break;
-                  // do nothing
+              // do nothing
           }
         }
         resolve({bundle: bundle, dest: dest, format: format});
@@ -92,12 +96,54 @@ class Builder {
     });
   }
 
+  forBundles(bundles, cb) {
+    for (let bundle of bundles) {
+      cb(bundle);
+    }
+  }
+
+  /**
+   * Checks if another bundle has the same destintation, when true,
+   * checks if the formats are the same
+   * @param {array} bundles
+   *
+   * @example
+   * [{
+   *    dest: 'dist/index.js',
+   *    format: 'es'
+   *  }, {
+   *    dest: 'dist/index.js',
+   *    format: 'es'
+   *  }]
+   * // would result in true
+   */
+  compareBundles(bundles, cb) {
+    this.forBundles(bundles, bundle => {
+      // itterate trough the bundles
+      for (let i of bundles) {
+        // ensure we are not comaring against the same bundle
+        if (bundles.indexOf(i) !== bundles.indexOf(bundle)) {
+          // compare destination between the current bundle & other bundles;
+          if (i.dest === bundle.dest) {
+            // compare the format
+            if (i.format !== bundle.format) {
+              // rename dest so we don't conflict with other bundles
+              bundle.shouldRename = true;
+              return cb(bundle);
+            }
+          }
+        }
+      }
+      cb(bundle);
+    })
+  }
+
   promiseBundles(config) {
     return new Promise((resolve, reject) => {
       let formats = [];
       let bundles = config.bundles;
       try {
-        for (let bundle of bundles) {
+        this.compareBundles(bundles, bundle => {
           bundle.name = bundle.name || config.name;
           bundle.babel = bundle.babel || config.babel;
           bundle.sourceMap = bundle.sourceMap || config.sourceMap;
@@ -106,17 +152,12 @@ class Builder {
               bundle.format = format;
               formats.push(this.handleFormats(bundle));
             }
-          } else if (bundle.format && typeof bundle.format !== 'string') {
-            for (let format of bundle.format) {
-              bundle.format = format;
-              formats.push(this.handleFormats(bundle));
-            }
           } else {
             formats.push(this.handleFormats(bundle));
           }
-        }
-        Promise.all(formats).then(bundles => {
-          resolve(bundles);
+          Promise.all(formats).then(bundles => {
+            resolve(bundles);
+          });
         });
       } catch (err) {
         reject(err);

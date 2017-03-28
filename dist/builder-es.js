@@ -120,7 +120,6 @@ let bundler = (() => {
       bundle.dest = dest;
       fns.push(fn(bundle));
     }
-
     yield asyncGenerator.await(Promise.all(fns).then(function (bundles) {
       logWorker.kill('SIGINT');
       if (global.debug) {
@@ -129,14 +128,14 @@ let bundler = (() => {
         }
       }
       cb(bundles);
+    }).catch(function (error) {
+      logger.warn(error);
     }));
   });
-
   return function bundler(_x, _x2, _x3) {
     return _ref.apply(this, arguments);
   };
 })();
-
 const { rollup } = require('rollup');
 const path = require('path');
 const { fork } = require('child_process');
@@ -144,14 +143,8 @@ const logger = require('backed-logger');
 let iterator;
 let cache;
 let warnings = [];
-
 const logWorker = fork(path.join(__dirname, 'workers/log-worker.js'));
-
 class Builder {
-
-  /**
-   * convert hyphen to a javascript property srting
-   */
   toJsProp(string) {
     let parts = string.split('-');
     if (parts.length > 1) {
@@ -165,14 +158,12 @@ class Builder {
     }
     return string;
   }
-
   build(config) {
     return new Promise((resolve, reject) => {
       logWorker.send('start');
       logWorker.send(logger._chalk('building', 'cyan'));
       this.promiseBundles(config).then(bundles => {
         iterator = bundler(bundles, this.bundle, bundles => {
-
           resolve(bundles);
         });
         iterator.next();
@@ -182,16 +173,19 @@ class Builder {
       });
     });
   }
-
   handleFormats(bundle) {
     return new Promise((resolve, reject) => {
       try {
         const format = bundle.format;
         let dest = bundle.dest;
-        if (format === 'iife' && !bundle.moduleName) {
-          bundle.moduleName = this.toJsProp(bundle.name);
-        } else {
+        let formats = [];
+        if (bundle.shouldRename) {
           switch (format) {
+            case 'iife':
+              if (!bundle.moduleName) {
+                bundle.moduleName = this.toJsProp(bundle.name);
+              }
+              break;
             case 'cjs':
               dest = bundle.dest.replace('.js', '-node.js');
               break;
@@ -201,7 +195,6 @@ class Builder {
               break;
             default:
               break;
-            // do nothing
           }
         }
         resolve({ bundle: bundle, dest: dest, format: format });
@@ -210,13 +203,32 @@ class Builder {
       }
     });
   }
-
+  forBundles(bundles, cb) {
+    for (let bundle of bundles) {
+      cb(bundle);
+    }
+  }
+  compareBundles(bundles, cb) {
+    this.forBundles(bundles, bundle => {
+      for (let i of bundles) {
+        if (bundles.indexOf(i) !== bundles.indexOf(bundle)) {
+          if (i.dest === bundle.dest) {
+            if (i.format !== bundle.format) {
+              bundle.shouldRename = true;
+              return cb(bundle);
+            }
+          }
+        }
+      }
+      cb(bundle);
+    });
+  }
   promiseBundles(config) {
     return new Promise((resolve, reject) => {
       let formats = [];
       let bundles = config.bundles;
       try {
-        for (let bundle of bundles) {
+        this.compareBundles(bundles, bundle => {
           bundle.name = bundle.name || config.name;
           bundle.babel = bundle.babel || config.babel;
           bundle.sourceMap = bundle.sourceMap || config.sourceMap;
@@ -225,15 +237,10 @@ class Builder {
               bundle.format = format;
               formats.push(this.handleFormats(bundle));
             }
-          } else if (bundle.format && typeof bundle.format !== 'string') {
-            for (let format of bundle.format) {
-              bundle.format = format;
-              formats.push(this.handleFormats(bundle));
-            }
           } else {
             formats.push(this.handleFormats(bundle));
           }
-        }
+        });
         Promise.all(formats).then(bundles => {
           resolve(bundles);
         });
@@ -242,36 +249,35 @@ class Builder {
       }
     });
   }
-
-  /**
-   * @param {object} config
-   * @param {string} config.src path/to/js
-   * @param {string} config.dest destination to write to
-   * @param {string} config.format format to build ['es', 'iife', 'amd', 'cjs']
-   * @param {string} config.name the name of your element/app
-   * @param {string} config.moduleName the moduleName for your element/app (not needed for es & cjs)
-   * @param {boolean} config.sourceMap Wether or not to build sourceMaps defaults to 'true'
-   * @param {object} config.plugins rollup plugins to use [see](https://github.com/rollup/rollup/wiki/Plugins)
-   */
   bundle(config = { src: null, dest: 'bundle.js', format: 'iife', name: null, plugins: [], moduleName: null, sourceMap: true }) {
     return new Promise((resolve, reject) => {
-      let plugins = config.plugins || [];
-      if (config.babel) {
-        const babel = require('rollup-plugin-babel');
-        plugins.push(babel(config.babel));
+      let plugins = [];
+      let requiredPlugins = {};
+      for (let plugin of Object.keys(config.plugins)) {
+        let required;
+        try {
+          required = require(`rollup-plugin-${plugin}`);
+        } catch (error) {
+          try {
+            required = require(path.join(process.cwd(), `/node_modules/rollup-plugin-${plugin}`));
+          } catch (error) {
+            reject(error);
+          }
+        }
+        const conf = config.plugins[plugin];
+        requiredPlugins[plugin] = required;
+        plugins.push(requiredPlugins[plugin](conf));
       }
       rollup({
         entry: `${process.cwd()}/${config.src}`,
         plugins: plugins,
         cache: cache,
-        // Use the previous bundle as starting point.
         onwarn: warning => {
           warnings.push(warning);
         }
       }).then(bundle => {
         cache = bundle;
         bundle.write({
-          // output format - 'amd', 'cjs', 'es', 'iife', 'umd'
           format: config.format,
           moduleName: config.moduleName,
           sourceMap: config.sourceMap,
@@ -281,7 +287,7 @@ class Builder {
           logWorker.send(logger._chalk(`${config.name}::build finished`, 'cyan'));
           logWorker.send('done');
           logWorker.on('message', () => {
-            resolve();
+            resolve(bundle);
           });
         }, 100);
       }).catch(err => {

@@ -45,6 +45,7 @@ async function * bundler(bundles, fn, cb) {
     }
     cb(bundles)
   }).catch(error => {
+    logWorker.kill('SIGINT');
     logger.error(error);
   });
 }

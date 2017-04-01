@@ -8,6 +8,22 @@ let cache;
 let warnings = [];
 
 const logWorker = fork(path.join(__dirname, 'workers/log-worker.js'));
+/**
+ * convert hyphen to a javascript property srting
+ */
+const toJsProp = string => {
+  let parts = string.split('-');
+  if (parts.length > 1) {
+    string = parts[0];
+    for (let part of parts) {
+      if (parts[0] !== part) {
+        var upper = part.charAt(0).toUpperCase();
+        string += upper + part.slice(1).toLowerCase();
+      }
+    }
+  }
+  return string;
+}
 
 async function * bundler(bundles, fn, cb) {
   let fns = [];
@@ -28,26 +44,11 @@ async function * bundler(bundles, fn, cb) {
       }
     }
     cb(bundles)
-  }).catch(error => {logger.warn(error);});
+  }).catch(error => {
+    logger.error(error);
+  });
 }
 class Builder {
-
-  /**
-   * convert hyphen to a javascript property srting
-   */
-  toJsProp(string) {
-    let parts = string.split('-');
-    if (parts.length > 1) {
-      string = parts[0];
-      for (let part of parts) {
-        if (parts[0] !== part) {
-          var upper = part.charAt(0).toUpperCase();
-          string += upper + part.slice(1).toLowerCase();
-        }
-      }
-    }
-    return string;
-  }
 
   build(config) {
     return new Promise((resolve, reject) => {
@@ -76,7 +77,7 @@ class Builder {
           switch (format) {
             case 'iife':
               if (!bundle.moduleName) {
-                bundle.moduleName = this.toJsProp(bundle.name);
+                bundle.moduleName = toJsProp(bundle.name);
               }
               break;
             case 'cjs':
@@ -177,10 +178,11 @@ class Builder {
  * @param {boolean} config.sourceMap Wether or not to build sourceMaps defaults to 'true'
  * @param {object} config.plugins rollup plugins to use [see](https://github.com/rollup/rollup/wiki/Plugins)
  */
-  bundle(config = {src: null, dest: 'bundle.js', format: 'iife', name: null, plugins: [], moduleName: null, sourceMap: true}) {
+  bundle(config = {src: null, dest: 'bundle.js', format: 'iife', name: null, plugins: [], moduleName: null, sourceMap: true, external: []}) {
     return new Promise((resolve, reject) => {
       let plugins = [];
       let requiredPlugins = {};
+
       for (let plugin of Object.keys(config.plugins)) {
         let required;
         try {
@@ -193,14 +195,16 @@ class Builder {
           }
         }
         const conf = config.plugins[plugin];
-        requiredPlugins[plugin] = required;
+        const name = toJsProp(plugin);
+        requiredPlugins[name] = required;
 
-        plugins.push(requiredPlugins[plugin](conf));
+        plugins.push(requiredPlugins[name](conf));
       }
 
       rollup({
         entry: `${process.cwd()}/${config.src}`,
         plugins: plugins,
+        external: config.external,
         cache: cache,
       // Use the previous bundle as starting point.
         onwarn: warning => {

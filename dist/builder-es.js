@@ -129,7 +129,8 @@ let bundler = (() => {
       }
       cb(bundles);
     }).catch(function (error) {
-      logger.warn(error);
+      logWorker.kill('SIGINT');
+      logger.error(error);
     }));
   });
   return function bundler(_x, _x2, _x3) {
@@ -144,20 +145,20 @@ let iterator;
 let cache;
 let warnings = [];
 const logWorker = fork(path.join(__dirname, 'workers/log-worker.js'));
-class Builder {
-  toJsProp(string) {
-    let parts = string.split('-');
-    if (parts.length > 1) {
-      string = parts[0];
-      for (let part of parts) {
-        if (parts[0] !== part) {
-          var upper = part.charAt(0).toUpperCase();
-          string += upper + part.slice(1).toLowerCase();
-        }
+const toJsProp = string => {
+  let parts = string.split('-');
+  if (parts.length > 1) {
+    string = parts[0];
+    for (let part of parts) {
+      if (parts[0] !== part) {
+        var upper = part.charAt(0).toUpperCase();
+        string += upper + part.slice(1).toLowerCase();
       }
     }
-    return string;
   }
+  return string;
+};
+class Builder {
   build(config) {
     return new Promise((resolve, reject) => {
       logWorker.send('start');
@@ -183,7 +184,7 @@ class Builder {
           switch (format) {
             case 'iife':
               if (!bundle.moduleName) {
-                bundle.moduleName = this.toJsProp(bundle.name);
+                bundle.moduleName = toJsProp(bundle.name);
               }
               break;
             case 'cjs':
@@ -249,7 +250,7 @@ class Builder {
       }
     });
   }
-  bundle(config = { src: null, dest: 'bundle.js', format: 'iife', name: null, plugins: [], moduleName: null, sourceMap: true }) {
+  bundle(config = { src: null, dest: 'bundle.js', format: 'iife', name: null, plugins: [], moduleName: null, sourceMap: true, external: [] }) {
     return new Promise((resolve, reject) => {
       let plugins = [];
       let requiredPlugins = {};
@@ -265,12 +266,14 @@ class Builder {
           }
         }
         const conf = config.plugins[plugin];
-        requiredPlugins[plugin] = required;
-        plugins.push(requiredPlugins[plugin](conf));
+        const name = toJsProp(plugin);
+        requiredPlugins[name] = required;
+        plugins.push(requiredPlugins[name](conf));
       }
       rollup({
         entry: `${process.cwd()}/${config.src}`,
         plugins: plugins,
+        external: config.external,
         cache: cache,
         onwarn: warning => {
           warnings.push(warning);

@@ -9,18 +9,18 @@ var _asyncGenerator = _interopDefault(require('babel-runtime/helpers/asyncGenera
 
 var bundler = function () {
   var _ref = _asyncGenerator.wrap(_regeneratorRuntime.mark(function _callee(bundles, fn, cb) {
-    var fns, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, bundle, dest;
+    var fns, _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2, bundle, dest;
     return _regeneratorRuntime.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
             fns = [];
-            _iteratorNormalCompletion = true;
-            _didIteratorError = false;
-            _iteratorError = undefined;
+            _iteratorNormalCompletion2 = true;
+            _didIteratorError2 = false;
+            _iteratorError2 = undefined;
             _context.prev = 4;
-            for (_iterator = bundles[Symbol.iterator](); !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-              bundle = _step.value;
+            for (_iterator2 = bundles[Symbol.iterator](); !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+              bundle = _step2.value;
               dest = bundle.dest;
               bundle = bundle.bundle || bundle;
               bundle.dest = dest;
@@ -31,21 +31,21 @@ var bundler = function () {
           case 8:
             _context.prev = 8;
             _context.t0 = _context['catch'](4);
-            _didIteratorError = true;
-            _iteratorError = _context.t0;
+            _didIteratorError2 = true;
+            _iteratorError2 = _context.t0;
           case 12:
             _context.prev = 12;
             _context.prev = 13;
-            if (!_iteratorNormalCompletion && _iterator.return) {
-              _iterator.return();
+            if (!_iteratorNormalCompletion2 && _iterator2.return) {
+              _iterator2.return();
             }
           case 15:
             _context.prev = 15;
-            if (!_didIteratorError) {
+            if (!_didIteratorError2) {
               _context.next = 18;
               break;
             }
-            throw _iteratorError;
+            throw _iteratorError2;
           case 18:
             return _context.finish(15);
           case 19:
@@ -55,32 +55,33 @@ var bundler = function () {
             return _asyncGenerator.await(Promise.all(fns).then(function (bundles) {
               logWorker.kill('SIGINT');
               if (global.debug) {
-                var _iteratorNormalCompletion2 = true;
-                var _didIteratorError2 = false;
-                var _iteratorError2 = undefined;
+                var _iteratorNormalCompletion3 = true;
+                var _didIteratorError3 = false;
+                var _iteratorError3 = undefined;
                 try {
-                  for (var _iterator2 = warnings[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                    var warning = _step2.value;
+                  for (var _iterator3 = warnings[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                    var warning = _step3.value;
                     logger.warn(warning);
                   }
                 } catch (err) {
-                  _didIteratorError2 = true;
-                  _iteratorError2 = err;
+                  _didIteratorError3 = true;
+                  _iteratorError3 = err;
                 } finally {
                   try {
-                    if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                      _iterator2.return();
+                    if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                      _iterator3.return();
                     }
                   } finally {
-                    if (_didIteratorError2) {
-                      throw _iteratorError2;
+                    if (_didIteratorError3) {
+                      throw _iteratorError3;
                     }
                   }
                 }
               }
               cb(bundles);
             }).catch(function (error) {
-              logger.warn(error);
+              logWorker.kill('SIGINT');
+              logger.error(error);
             }));
           case 22:
           case 'end':
@@ -103,45 +104,43 @@ var iterator = void 0;
 var cache = void 0;
 var warnings = [];
 var logWorker = fork(path.join(__dirname, 'workers/log-worker.js'));
+var toJsProp = function toJsProp(string) {
+  var parts = string.split('-');
+  if (parts.length > 1) {
+    string = parts[0];
+    var _iteratorNormalCompletion = true;
+    var _didIteratorError = false;
+    var _iteratorError = undefined;
+    try {
+      for (var _iterator = parts[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+        var part = _step.value;
+        if (parts[0] !== part) {
+          var upper = part.charAt(0).toUpperCase();
+          string += upper + part.slice(1).toLowerCase();
+        }
+      }
+    } catch (err) {
+      _didIteratorError = true;
+      _iteratorError = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion && _iterator.return) {
+          _iterator.return();
+        }
+      } finally {
+        if (_didIteratorError) {
+          throw _iteratorError;
+        }
+      }
+    }
+  }
+  return string;
+};
 var Builder = function () {
   function Builder() {
     _classCallCheck(this, Builder);
   }
   _createClass(Builder, [{
-    key: 'toJsProp',
-    value: function toJsProp(string) {
-      var parts = string.split('-');
-      if (parts.length > 1) {
-        string = parts[0];
-        var _iteratorNormalCompletion3 = true;
-        var _didIteratorError3 = false;
-        var _iteratorError3 = undefined;
-        try {
-          for (var _iterator3 = parts[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-            var part = _step3.value;
-            if (parts[0] !== part) {
-              var upper = part.charAt(0).toUpperCase();
-              string += upper + part.slice(1).toLowerCase();
-            }
-          }
-        } catch (err) {
-          _didIteratorError3 = true;
-          _iteratorError3 = err;
-        } finally {
-          try {
-            if (!_iteratorNormalCompletion3 && _iterator3.return) {
-              _iterator3.return();
-            }
-          } finally {
-            if (_didIteratorError3) {
-              throw _iteratorError3;
-            }
-          }
-        }
-      }
-      return string;
-    }
-  }, {
     key: 'build',
     value: function build(config) {
       var _this = this;
@@ -162,7 +161,6 @@ var Builder = function () {
   }, {
     key: 'handleFormats',
     value: function handleFormats(bundle) {
-      var _this2 = this;
       return new Promise(function (resolve, reject) {
         try {
           var format = bundle.format;
@@ -172,7 +170,7 @@ var Builder = function () {
             switch (format) {
               case 'iife':
                 if (!bundle.moduleName) {
-                  bundle.moduleName = _this2.toJsProp(bundle.name);
+                  bundle.moduleName = toJsProp(bundle.name);
                 }
                 break;
               case 'cjs':
@@ -257,12 +255,12 @@ var Builder = function () {
   }, {
     key: 'promiseBundles',
     value: function promiseBundles(config) {
-      var _this3 = this;
+      var _this2 = this;
       return new Promise(function (resolve, reject) {
         var formats = [];
         var bundles = config.bundles;
         try {
-          _this3.compareBundles(bundles, function (bundle) {
+          _this2.compareBundles(bundles, function (bundle) {
             bundle.name = bundle.name || config.name;
             bundle.babel = bundle.babel || config.babel;
             bundle.sourceMap = bundle.sourceMap || config.sourceMap;
@@ -274,7 +272,7 @@ var Builder = function () {
                 for (var _iterator6 = config.format[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
                   var format = _step6.value;
                   bundle.format = format;
-                  formats.push(_this3.handleFormats(bundle));
+                  formats.push(_this2.handleFormats(bundle));
                 }
               } catch (err) {
                 _didIteratorError6 = true;
@@ -291,7 +289,7 @@ var Builder = function () {
                 }
               }
             } else {
-              formats.push(_this3.handleFormats(bundle));
+              formats.push(_this2.handleFormats(bundle));
             }
           });
           Promise.all(formats).then(function (bundles) {
@@ -305,7 +303,7 @@ var Builder = function () {
   }, {
     key: 'bundle',
     value: function bundle() {
-      var config = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : { src: null, dest: 'bundle.js', format: 'iife', name: null, plugins: [], moduleName: null, sourceMap: true };
+      var config = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : { src: null, dest: 'bundle.js', format: 'iife', name: null, plugins: [], moduleName: null, sourceMap: true, external: [] };
       return new Promise(function (resolve, reject) {
         var plugins = [];
         var requiredPlugins = {};
@@ -326,8 +324,9 @@ var Builder = function () {
               }
             }
             var conf = config.plugins[plugin];
-            requiredPlugins[plugin] = required;
-            plugins.push(requiredPlugins[plugin](conf));
+            var name = toJsProp(plugin);
+            requiredPlugins[name] = required;
+            plugins.push(requiredPlugins[name](conf));
           }
         } catch (err) {
           _didIteratorError7 = true;
@@ -346,6 +345,7 @@ var Builder = function () {
         rollup({
           entry: process.cwd() + '/' + config.src,
           plugins: plugins,
+          external: config.external,
           cache: cache,
           onwarn: function onwarn(warning) {
             warnings.push(warning);
